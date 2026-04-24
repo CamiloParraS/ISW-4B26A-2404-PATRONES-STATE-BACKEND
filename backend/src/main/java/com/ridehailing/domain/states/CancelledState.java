@@ -1,37 +1,16 @@
 package com.ridehailing.domain.states;
 
-import com.ridehailing.domain.Ride;
-import com.ridehailing.domain.RideState;
-
-public class CancelledState implements RideState {
-
-    @Override
-    public void requestRide(Ride ride) {
-        System.out.println("Error: Ride is cancelled.");
-    }
-
-    @Override
-    public void assignDriver(Ride ride) {
-        System.out.println("Error: Ride is cancelled.");
-    }
+/**
+ * Estado terminal: el viaje fue cancelado por el pasajero antes
+ * de iniciar el trayecto.
+ *
+ * <p>No hay transiciones válidas desde este estado (es terminal).
+ * Cualquier acción lanza {@link IllegalStateException}.</p>
+ */
+public class CancelledState extends AbstractRideState {
 
     @Override
-    public void driverArrives(Ride ride) {
-        System.out.println("Error: Ride is cancelled.");
-    }
-
-    @Override
-    public void startTrip(Ride ride) {
-        System.out.println("Error: Ride is cancelled.");
-    }
-
-    @Override
-    public void completeTrip(Ride ride) {
-        System.out.println("Error: Ride is cancelled.");
-    }
-
-    @Override
-    public void cancel(Ride ride) {
-        System.out.println("Error: Ride is cancelled.");
+    protected String getNombreEstado() {
+        return "CANCELADO";
     }
 }

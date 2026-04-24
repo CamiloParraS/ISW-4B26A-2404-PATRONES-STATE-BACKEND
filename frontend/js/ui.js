@@ -1,4 +1,4 @@
-// ui.js - DOM rendering helpers
+// ui.js - Funciones de ayuda para el renderizado del DOM
 
 const STEPS = [
   { key: "REQUESTING", label: "Solicitado" },
@@ -8,16 +8,7 @@ const STEPS = [
   { key: "COMPLETED", label: "Completado" },
 ];
 
-const VALID_ACTIONS = {
-  REQUESTING: ["assignDriver", "cancel"],
-  DRIVER_ASSIGNED: ["driverArrives", "cancel"],
-  DRIVER_ARRIVING: ["startTrip", "cancel"],
-  IN_TRIP: ["completeTrip"],
-  COMPLETED: [],
-  CANCELLED: [],
-};
-
-const ACTION_LABELS = {
+export const ACTION_LABELS = {
   requestRide: "Solicitar viaje",
   assignDriver: "Asignar conductor",
   driverArrives: "Conductor llega",
@@ -44,120 +35,108 @@ const ALL_ACTIONS = [
   "cancel",
 ];
 
-const LOG_LABELS = {
-  ...ACTION_LABELS,
-  createRide: "Crear viaje",
-  copyId: "Copiar ID",
-};
-
 export const ui = {
-  showRidePanel() {
-    document.getElementById("no-ride").classList.add("hidden");
-    document.getElementById("ride-panel").classList.remove("hidden");
+  showEmptyState(show) {
+    document.getElementById("no-ride").classList.toggle("hidden", !show);
   },
 
-  showEmptyState() {
-    document.getElementById("no-ride").classList.remove("hidden");
-    document.getElementById("ride-panel").classList.add("hidden");
-  },
+  createRideCard(rideId, onAction) {
+    const template = document.getElementById("ride-card-template");
+    const container = document.getElementById("rides-container");
 
-  setRideId(id) {
-    document.getElementById("ride-id").textContent = id;
-  },
+    const clone = template.content.cloneNode(true);
+    const card = clone.querySelector(".ride-card");
+    card.id = `ride-${rideId}`;
 
-  updateStateBadge(stateName) {
-    const badge = document.getElementById("state-badge");
-    badge.textContent = BADGE_LABELS[stateName] || stateName.replace(/_/g, " ");
-    badge.className = "state-badge";
-    if (stateName === "CANCELLED") badge.classList.add("cancelled");
-    if (stateName === "COMPLETED") badge.classList.add("completed");
-    void badge.offsetWidth;
-    badge.classList.add("pulse");
-    badge.addEventListener(
-      "animationend",
-      () => badge.classList.remove("pulse"),
-      {
-        once: true,
-      },
-    );
-  },
+    card.querySelector(".ride-id").textContent = rideId;
 
-  renderTimeline(currentState) {
-    const container = document.getElementById("timeline");
-    container.innerHTML = "";
-
-    if (currentState === "CANCELLED") {
-      STEPS.forEach((step) => {
-        const el = document.createElement("div");
-        el.className = "timeline-step";
-        el.innerHTML = `<div class="step-dot">✕</div><span class="step-label">${step.label}</span>`;
-        container.appendChild(el);
-      });
-      const cancelled = document.createElement("div");
-      cancelled.className = "timeline-step cancelled-branch";
-      cancelled.innerHTML =
-        '<div class="step-dot">✕</div><span class="step-label">Cancelado</span>';
-      container.appendChild(cancelled);
-      return;
-    }
-
-    const currentIdx = STEPS.findIndex((s) => s.key === currentState);
-    STEPS.forEach((step, idx) => {
-      const el = document.createElement("div");
-      let cls = "timeline-step";
-      if (idx < currentIdx) cls += " done";
-      else if (idx === currentIdx) cls += " active";
-      el.className = cls;
-      const check = idx < currentIdx ? "✓" : idx === currentIdx ? "●" : "";
-      el.innerHTML = `<div class="step-dot">${check}</div><span class="step-label">${step.label}</span>`;
-      container.appendChild(el);
+    card.querySelector(".btn-copy-id").addEventListener("click", () => {
+      navigator.clipboard.writeText(rideId).then(
+        () => this.showSuccessToast("ID copiado al portapapeles"),
+        () => this.showErrorToast("No se pudo copiar el ID"),
+      );
     });
-  },
 
-  renderActionButtons(currentState, onAction) {
-    const container = document.getElementById("action-buttons");
-    container.innerHTML = "";
-    const valid = VALID_ACTIONS[currentState] || [];
-
+    const actionContainer = card.querySelector(".action-grid");
     ALL_ACTIONS.forEach((action) => {
       const btn = document.createElement("button");
       const isCancel = action === "cancel";
       btn.className = `btn ${isCancel ? "btn-danger" : "btn-secondary"}`;
       btn.textContent = ACTION_LABELS[action];
-      btn.disabled = !valid.includes(action);
-      btn.addEventListener("click", () => onAction(action));
-      container.appendChild(btn);
+      // A propósito NO deshabilitamos los botones aquí, para dejar que el backend valide el estado.
+      btn.dataset.action = action;
+      btn.addEventListener("click", () => onAction(rideId, action));
+      actionContainer.appendChild(btn);
     });
+
+    container.prepend(card);
+    return card;
   },
 
-  setButtonsLoading(loading) {
-    document.querySelectorAll(".action-grid .btn").forEach((btn) => {
+  updateRideCard(rideId, stateName) {
+    const card = document.getElementById(`ride-${rideId}`);
+    if (!card) return;
+
+    // Actualizar Etiqueta (Badge)
+    const badge = card.querySelector(".state-badge");
+    badge.textContent = BADGE_LABELS[stateName] || stateName.replace(/_/g, " ");
+    badge.className = "state-badge";
+    if (stateName === "CANCELLED") badge.classList.add("cancelled");
+    if (stateName === "COMPLETED") badge.classList.add("completed");
+
+    const timeline = card.querySelector(".timeline");
+    timeline.innerHTML = "";
+
+    if (stateName === "CANCELLED") {
+      STEPS.forEach((step) => {
+        const el = document.createElement("div");
+        el.className = "timeline-step";
+        el.innerHTML = `<div class="step-dot">✕</div><span class="step-label">${step.label}</span>`;
+        timeline.appendChild(el);
+      });
+      const cancelled = document.createElement("div");
+      cancelled.className = "timeline-step cancelled-branch";
+      cancelled.innerHTML =
+        '<div class="step-dot">✕</div><span class="step-label">Cancelado</span>';
+      timeline.appendChild(cancelled);
+    } else {
+      const currentIdx = STEPS.findIndex((s) => s.key === stateName);
+      STEPS.forEach((step, idx) => {
+        const el = document.createElement("div");
+        let cls = "timeline-step";
+        if (idx < currentIdx) cls += " done";
+        else if (idx === currentIdx) cls += " active";
+        el.className = cls;
+        const check = idx < currentIdx ? "✓" : idx === currentIdx ? "●" : "";
+        el.innerHTML = `<div class="step-dot">${check}</div><span class="step-label">${step.label}</span>`;
+        timeline.appendChild(el);
+      });
+    }
+  },
+
+  setCardLoading(rideId, loading) {
+    const card = document.getElementById(`ride-${rideId}`);
+    if (!card) return;
+    card.querySelectorAll(".action-grid .btn").forEach((btn) => {
       btn.disabled = loading;
     });
   },
 
-  appendLog(action, result) {
-    const list = document.getElementById("log-list");
-    const now = new Date().toLocaleTimeString("es-CO");
-    const actionLabel = LOG_LABELS[action] || action;
-    const li = document.createElement("li");
-    li.className = "log-entry";
-    li.innerHTML = `
-			<span class="log-time">${now}</span>
-			<span class="log-action">${actionLabel}</span>
-			<span class="log-result">${result}</span>
-		`;
-    list.prepend(li);
-    while (list.children.length > 15) list.removeChild(list.lastChild);
-  },
-
-  showNewRideButton(show) {
-    document.getElementById("btn-new-ride-2").classList.toggle("hidden", !show);
-  },
-
-  showError(message) {
+  showErrorToast(message) {
     const toast = document.getElementById("error-toast");
-    toast.textContent = message;
+    toast.innerHTML = `<span> ${message}</span>`;
+    toast.style.background = "var(--danger)";
+    this._showToast(toast);
+  },
+
+  showSuccessToast(message) {
+    const toast = document.getElementById("error-toast");
+    toast.innerHTML = `<span> ${message}</span>`;
+    toast.style.background = "var(--success)";
+    this._showToast(toast);
+  },
+
+  _showToast(toast) {
     toast.classList.remove("hidden");
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => toast.classList.add("hidden"), 4000);

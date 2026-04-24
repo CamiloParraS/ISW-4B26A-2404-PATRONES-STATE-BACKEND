@@ -1,4 +1,4 @@
-// api.js - All HTTP calls to the Spring Boot backend
+// api.js - Todas las llamadas HTTP al backend Spring Boot
 
 const BASE = "http://localhost:8080/api/rides";
 

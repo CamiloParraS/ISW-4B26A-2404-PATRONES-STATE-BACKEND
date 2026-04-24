@@ -1,76 +1,51 @@
-// app.js - Event wiring and application state
+// app.js - Conexión de eventos y estado de la aplicación
 
 import { rideApi } from "./api.js";
-import { ui } from "./ui.js";
+import { ui, ACTION_LABELS } from "./ui.js";
 
-let currentRideId = null;
-let currentState = null;
-let loading = false;
+const rides = {}; // Almacena los estados de los viajes por ID
 
-const TERMINAL_STATES = ["COMPLETED", "CANCELLED"];
-
-ui.showEmptyState();
-
-function setLoading(val) {
-  loading = val;
-  ui.setButtonsLoading(val);
-}
-
-function applyState(stateName) {
-  currentState = stateName;
-  ui.updateStateBadge(stateName);
-  ui.renderTimeline(stateName);
-  ui.renderActionButtons(stateName, handleAction);
-  ui.showNewRideButton(TERMINAL_STATES.includes(stateName));
+function updateEmptyState() {
+  const hasRides = Object.keys(rides).length > 0;
+  ui.showEmptyState(!hasRides);
 }
 
 async function handleNewRide() {
-  setLoading(true);
+  const btn = document.getElementById("btn-new-ride");
+  btn.disabled = true;
+  btn.textContent = "Creando...";
   try {
     const data = await rideApi.createRide();
-    currentRideId = data.id;
-    ui.setRideId(data.id);
-    ui.showRidePanel();
-    applyState(data.stateName);
-    ui.appendLog("createRide", data.message);
+    rides[data.id] = data.stateName;
+    ui.createRideCard(data.id, handleAction);
+    ui.updateRideCard(data.id, data.stateName);
+    updateEmptyState();
   } catch (err) {
-    ui.showError(err.message);
+    ui.showErrorToast(err.message);
   } finally {
-    setLoading(false);
+    btn.disabled = false;
+    btn.textContent = "+ Nuevo Viaje";
   }
 }
 
-async function handleAction(action) {
-  if (loading || !currentRideId) return;
-  setLoading(true);
+async function handleAction(rideId, action) {
+  if (!rides[rideId]) return;
+
+  ui.setCardLoading(rideId, true);
   try {
-    const data = await rideApi.performAction(currentRideId, action);
-    applyState(data.stateName);
-    ui.appendLog(action, data.message);
+    const data = await rideApi.performAction(rideId, action);
+    rides[rideId] = data.stateName;
+    ui.updateRideCard(rideId, data.stateName);
+    ui.showSuccessToast(`Acción completada: ${ACTION_LABELS[action]}`);
   } catch (err) {
-    ui.showError(err.message);
+    ui.updateRideCard(rideId, rides[rideId]);
+    ui.showErrorToast(err.message);
   } finally {
-    setLoading(false);
+    ui.setCardLoading(rideId, false);
   }
-}
-
-function handleReset() {
-  currentRideId = null;
-  currentState = null;
-  ui.showEmptyState();
 }
 
 document
   .getElementById("btn-new-ride")
   .addEventListener("click", handleNewRide);
-document
-  .getElementById("btn-new-ride-2")
-  .addEventListener("click", handleReset);
-document.getElementById("btn-copy-id").addEventListener("click", () => {
-  if (currentRideId) {
-    navigator.clipboard.writeText(currentRideId).then(
-      () => ui.appendLog("copyId", "ID copiado al portapapeles"),
-      () => ui.showError("No se pudo copiar el ID"),
-    );
-  }
-});
+updateEmptyState();

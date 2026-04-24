@@ -1,39 +1,33 @@
 package com.ridehailing.domain.states;
 
 import com.ridehailing.domain.Ride;
-import com.ridehailing.domain.RideState;
 
-public class RequestingState implements RideState {
+/**
+ * Estado inicial: el pasajero ha solicitado un viaje pero aún no se
+ * ha asignado un conductor.
+ *
+ * <p>Transiciones válidas desde este estado:</p>
+ * <ul>
+ *   <li>{@link #assignDriver(Ride)} → {@link DriverAssignedState}</li>
+ *   <li>{@link #cancel(Ride)} → {@link CancelledState}</li>
+ * </ul>
+ *
+ * <p>Todas las demás acciones lanzan {@link IllegalStateException}.</p>
+ */
+public class RequestingState extends AbstractRideState {
 
     @Override
-    public void requestRide(Ride ride) {
-        System.out.println("Ride is already being requested.");
+    protected String getNombreEstado() {
+        return "SOLICITANDO";
     }
 
     @Override
     public void assignDriver(Ride ride) {
-        System.out.println("Driver assigned.");
         ride.setState(new DriverAssignedState());
     }
 
     @Override
-    public void driverArrives(Ride ride) {
-        System.out.println("Error: Driver not yet assigned.");
-    }
-
-    @Override
-    public void startTrip(Ride ride) {
-        System.out.println("Error: Trip cannot start without a driver.");
-    }
-
-    @Override
-    public void completeTrip(Ride ride) {
-        System.out.println("Error: No active trip to complete.");
-    }
-
-    @Override
     public void cancel(Ride ride) {
-        System.out.println("Ride cancelled during request.");
         ride.setState(new CancelledState());
     }
 }
