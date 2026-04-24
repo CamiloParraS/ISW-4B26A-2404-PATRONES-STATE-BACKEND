@@ -1,21 +1,5 @@
-// ui.js - Funciones de ayuda para el renderizado del DOM
-
-const STEPS = [
-  { key: "REQUESTING", label: "Solicitado" },
-  { key: "DRIVER_ASSIGNED", label: "Asignado" },
-  { key: "DRIVER_ARRIVING", label: "En camino" },
-  { key: "IN_TRIP", label: "En viaje" },
-  { key: "COMPLETED", label: "Completado" },
-];
-
-export const ACTION_LABELS = {
-  requestRide: "Solicitar viaje",
-  assignDriver: "Asignar conductor",
-  driverArrives: "Conductor llega",
-  startTrip: "Iniciar viaje",
-  completeTrip: "Completar viaje",
-  cancel: "Cancelar viaje",
-};
+import { renderTimeline } from "./timeline.js";
+import { showToast } from "./toast.js";
 
 const BADGE_LABELS = {
   REQUESTING: "SOLICITANDO",
@@ -26,14 +10,15 @@ const BADGE_LABELS = {
   CANCELLED: "CANCELADO",
 };
 
-const ALL_ACTIONS = [
-  "requestRide",
-  "assignDriver",
-  "driverArrives",
-  "startTrip",
-  "completeTrip",
-  "cancel",
-];
+export const ACTION_LABELS = {
+  assignDriver: "Asignar conductor",
+  driverArrives: "Conductor llega",
+  startTrip: "Iniciar viaje",
+  completeTrip: "Completar viaje",
+  cancel: "Cancelar viaje",
+};
+
+const ALL_ACTIONS = Object.keys(ACTION_LABELS);
 
 export const ui = {
   showEmptyState(show) {
@@ -51,67 +36,44 @@ export const ui = {
     card.querySelector(".ride-id").textContent = rideId;
 
     card.querySelector(".btn-copy-id").addEventListener("click", () => {
-      navigator.clipboard.writeText(rideId).then(
-        () => this.showSuccessToast("ID copiado al portapapeles"),
-        () => this.showErrorToast("No se pudo copiar el ID"),
-      );
+      navigator.clipboard
+        .writeText(rideId)
+        .then(() => showToast("ID copiado al portapapeles", "success"))
+        .catch(() => showToast("No se pudo copiar el ID", "error"));
     });
 
-    const actionContainer = card.querySelector(".action-grid");
+    this._appendActionButtons(
+      card.querySelector(".action-grid"),
+      rideId,
+      onAction,
+    );
+    container.prepend(card);
+  },
+
+  _appendActionButtons(grid, rideId, onAction) {
     ALL_ACTIONS.forEach((action) => {
       const btn = document.createElement("button");
-      const isCancel = action === "cancel";
-      btn.className = `btn ${isCancel ? "btn-danger" : "btn-secondary"}`;
+      btn.className = `btn ${action === "cancel" ? "btn-danger" : "btn-secondary"}`;
       btn.textContent = ACTION_LABELS[action];
-      // A propósito NO deshabilitamos los botones aquí, para dejar que el backend valide el estado.
       btn.dataset.action = action;
       btn.addEventListener("click", () => onAction(rideId, action));
-      actionContainer.appendChild(btn);
+      grid.appendChild(btn);
     });
-
-    container.prepend(card);
-    return card;
   },
 
   updateRideCard(rideId, stateName) {
     const card = document.getElementById(`ride-${rideId}`);
     if (!card) return;
 
-    // Actualizar Etiqueta (Badge)
-    const badge = card.querySelector(".state-badge");
-    badge.textContent = BADGE_LABELS[stateName] || stateName.replace(/_/g, " ");
+    this._updateBadge(card.querySelector(".state-badge"), stateName);
+    renderTimeline(card.querySelector(".timeline"), stateName);
+  },
+
+  _updateBadge(badge, stateName) {
+    badge.textContent = BADGE_LABELS[stateName] ?? stateName.replace(/_/g, " ");
     badge.className = "state-badge";
     if (stateName === "CANCELLED") badge.classList.add("cancelled");
     if (stateName === "COMPLETED") badge.classList.add("completed");
-
-    const timeline = card.querySelector(".timeline");
-    timeline.innerHTML = "";
-
-    if (stateName === "CANCELLED") {
-      STEPS.forEach((step) => {
-        const el = document.createElement("div");
-        el.className = "timeline-step";
-        el.innerHTML = `<div class="step-dot">✕</div><span class="step-label">${step.label}</span>`;
-        timeline.appendChild(el);
-      });
-      const cancelled = document.createElement("div");
-      cancelled.className = "timeline-step cancelled-branch";
-      cancelled.innerHTML =
-        '<div class="step-dot">✕</div><span class="step-label">Cancelado</span>';
-      timeline.appendChild(cancelled);
-    } else {
-      const currentIdx = STEPS.findIndex((s) => s.key === stateName);
-      STEPS.forEach((step, idx) => {
-        const el = document.createElement("div");
-        let cls = "timeline-step";
-        if (idx < currentIdx) cls += " done";
-        else if (idx === currentIdx) cls += " active";
-        el.className = cls;
-        const check = idx < currentIdx ? "✓" : idx === currentIdx ? "●" : "";
-        el.innerHTML = `<div class="step-dot">${check}</div><span class="step-label">${step.label}</span>`;
-        timeline.appendChild(el);
-      });
-    }
   },
 
   setCardLoading(rideId, loading) {
@@ -123,22 +85,10 @@ export const ui = {
   },
 
   showErrorToast(message) {
-    const toast = document.getElementById("error-toast");
-    toast.innerHTML = `<span> ${message}</span>`;
-    toast.style.background = "var(--danger)";
-    this._showToast(toast);
+    showToast(message, "error");
   },
 
   showSuccessToast(message) {
-    const toast = document.getElementById("error-toast");
-    toast.innerHTML = `<span> ${message}</span>`;
-    toast.style.background = "var(--success)";
-    this._showToast(toast);
-  },
-
-  _showToast(toast) {
-    toast.classList.remove("hidden");
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => toast.classList.add("hidden"), 4000);
+    showToast(message, "success");
   },
 };

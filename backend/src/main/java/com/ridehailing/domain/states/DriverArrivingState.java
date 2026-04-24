@@ -1,28 +1,28 @@
 package com.ridehailing.domain.states;
 
 import com.ridehailing.domain.Ride;
+import com.ridehailing.domain.RideState;
 
-/**
- * El conductor está en camino al punto de recogida del pasajero.
- *
- * <p>Transiciones válidas desde este estado:</p>
- * <ul>
- *   <li>{@link #startTrip(Ride)} → {@link InTripState}</li>
- *   <li>{@link #cancel(Ride)} → {@link CancelledState}</li>
- * </ul>
- *
- * <p>Todas las demás acciones lanzan {@link IllegalStateException}.</p>
- */
-public class DriverArrivingState extends AbstractRideState {
+public class DriverArrivingState implements RideState {
 
     @Override
-    protected String getNombreEstado() {
-        return "CONDUCTOR EN CAMINO";
+    public void assignDriver(Ride ride) {
+        throw new IllegalStateException("Un conductor ya ha sido asignado a este viaje.");
+    }
+
+    @Override
+    public void driverArrives(Ride ride) {
+        throw new IllegalStateException("El conductor ya ha llegado.");
     }
 
     @Override
     public void startTrip(Ride ride) {
         ride.setState(new InTripState());
+    }
+
+    @Override
+    public void completeTrip(Ride ride) {
+        throw new IllegalStateException("No se puede completar el viaje antes de que comience.");
     }
 
     @Override

@@ -27,15 +27,7 @@ public class RideEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public RideEntity() {
-    }
-
-    public RideEntity(String id, String stateName, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.id = id;
-        this.stateName = stateName;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
+    public RideEntity() {}
 
     @PrePersist
     void onCreate() {

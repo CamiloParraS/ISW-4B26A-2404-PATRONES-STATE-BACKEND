@@ -1,16 +1,32 @@
 package com.ridehailing.domain.states;
 
-/**
- * Estado terminal: el viaje finalizó exitosamente y el pasajero
- * llegó a su destino.
- *
- * <p>No hay transiciones válidas desde este estado (es terminal).
- * Cualquier acción lanza {@link IllegalStateException}.</p>
- */
-public class CompletedState extends AbstractRideState {
+import com.ridehailing.domain.Ride;
+import com.ridehailing.domain.RideState;
+
+public class CompletedState implements RideState {
 
     @Override
-    protected String getNombreEstado() {
-        return "COMPLETADO";
+    public void assignDriver(Ride ride) {
+        throw new IllegalStateException("Este viaje ya ha sido completado.");
+    }
+
+    @Override
+    public void driverArrives(Ride ride) {
+        throw new IllegalStateException("Este viaje ya ha sido completado.");
+    }
+
+    @Override
+    public void startTrip(Ride ride) {
+        throw new IllegalStateException("Este viaje ya ha sido completado.");
+    }
+
+    @Override
+    public void completeTrip(Ride ride) {
+        throw new IllegalStateException("Este viaje ya ha sido completado.");
+    }
+
+    @Override
+    public void cancel(Ride ride) {
+        throw new IllegalStateException("Un viaje completado no puede ser cancelado.");
     }
 }

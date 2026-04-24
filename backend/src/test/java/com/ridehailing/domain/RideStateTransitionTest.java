@@ -1,6 +1,8 @@
 package com.ridehailing.domain;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -24,6 +26,31 @@ class RideStateTransitionTest {
         Ride ride = new Ride();
         ride.assignDriver();
         assertThrows(IllegalStateException.class, ride::startTrip);
+    }
+
+    @Test
+    void cannotCompleteTrip_fromRequesting() {
+        Ride ride = new Ride();
+        assertThrows(IllegalStateException.class, ride::completeTrip);
+    }
+
+    @Test
+    void cannotAssignDriver_afterCancellation() {
+        Ride ride = new Ride();
+        ride.cancel();
+        assertThrows(IllegalStateException.class, ride::assignDriver);
+    }
+
+    @Test
+    void transitionHistory_recordsAllStates() {
+        Ride ride = new Ride();
+        ride.assignDriver();
+        ride.driverArrives();
+        ride.startTrip();
+        ride.completeTrip();
+        assertEquals(
+                List.of("REQUESTING", "DRIVER_ASSIGNED", "DRIVER_ARRIVING", "IN_TRIP", "COMPLETED"),
+                ride.getTransitionHistory());
     }
 
     @Test

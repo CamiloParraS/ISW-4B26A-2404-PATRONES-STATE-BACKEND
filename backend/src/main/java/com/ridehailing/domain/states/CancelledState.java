@@ -1,16 +1,32 @@
 package com.ridehailing.domain.states;
 
-/**
- * Estado terminal: el viaje fue cancelado por el pasajero antes
- * de iniciar el trayecto.
- *
- * <p>No hay transiciones válidas desde este estado (es terminal).
- * Cualquier acción lanza {@link IllegalStateException}.</p>
- */
-public class CancelledState extends AbstractRideState {
+import com.ridehailing.domain.Ride;
+import com.ridehailing.domain.RideState;
+
+public class CancelledState implements RideState {
 
     @Override
-    protected String getNombreEstado() {
-        return "CANCELADO";
+    public void assignDriver(Ride ride) {
+        throw new IllegalStateException("El Viaje ya fue cancelado");
+    }
+
+    @Override
+    public void driverArrives(Ride ride) {
+        throw new IllegalStateException("El Viaje ya fue cancelado");
+    }
+
+    @Override
+    public void startTrip(Ride ride) {
+        throw new IllegalStateException("El Viaje ya fue cancelado");
+    }
+
+    @Override
+    public void completeTrip(Ride ride) {
+        throw new IllegalStateException("El Viaje ya fue cancelado");
+    }
+
+    @Override
+    public void cancel(Ride ride) {
+        throw new IllegalStateException("Este Viaje ya fue cancelado");
     }
 }

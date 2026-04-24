@@ -1,28 +1,34 @@
 package com.ridehailing.domain.states;
 
 import com.ridehailing.domain.Ride;
+import com.ridehailing.domain.RideState;
 
-/**
- * El viaje está en curso: el pasajero abordó y el conductor se dirige
- * al destino.
- *
- * <p>Transiciones válidas desde este estado:</p>
- * <ul>
- *   <li>{@link #completeTrip(Ride)} → {@link CompletedState}</li>
- * </ul>
- *
- * <p>No se permite cancelar una vez el viaje ha iniciado.
- * Todas las demás acciones lanzan {@link IllegalStateException}.</p>
- */
-public class InTripState extends AbstractRideState {
+public class InTripState implements RideState {
 
     @Override
-    protected String getNombreEstado() {
-        return "EN VIAJE";
+    public void assignDriver(Ride ride) {
+        throw new IllegalStateException(
+                "El viaje ya ha comenzado, el conductor ya está en camino.");
+    }
+
+    @Override
+    public void driverArrives(Ride ride) {
+        throw new IllegalStateException(
+                "El viaje ya ha comenzado, el conductor ya está en camino.");
+    }
+
+    @Override
+    public void startTrip(Ride ride) {
+        throw new IllegalStateException("El viaje ya ha comenzado.");
     }
 
     @Override
     public void completeTrip(Ride ride) {
         ride.setState(new CompletedState());
+    }
+
+    @Override
+    public void cancel(Ride ride) {
+        throw new IllegalStateException("Un viaje en Progreso no puede ser cancelado.");
     }
 }

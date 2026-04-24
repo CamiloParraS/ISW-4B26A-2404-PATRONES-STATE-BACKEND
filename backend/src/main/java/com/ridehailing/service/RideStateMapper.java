@@ -10,8 +10,7 @@ import com.ridehailing.domain.states.RequestingState;
 
 public final class RideStateMapper {
 
-    private RideStateMapper() {
-    }
+    private RideStateMapper() {}
 
     public static RideState fromStateName(String stateName) {
         return switch (stateName) {
@@ -21,7 +20,8 @@ public final class RideStateMapper {
             case "IN_TRIP" -> new InTripState();
             case "COMPLETED" -> new CompletedState();
             case "CANCELLED" -> new CancelledState();
-            default -> throw new IllegalArgumentException("Unknown state: " + stateName);
+            default -> throw new IllegalArgumentException(
+                    "Unknown ride state: '" + stateName + "'");
         };
     }
 }
