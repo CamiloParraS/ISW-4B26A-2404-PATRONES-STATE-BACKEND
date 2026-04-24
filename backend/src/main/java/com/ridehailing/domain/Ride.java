@@ -49,10 +49,8 @@ public class Ride {
     private String toStateName(RideState state) {
         String simpleName = state.getClass().getSimpleName();
         String rawName = simpleName.endsWith("State")
-            ? simpleName.substring(0, simpleName.length() - "State".length())
-            : simpleName;
-        return rawName
-            .replaceAll("([a-z])([A-Z])", "$1_$2")
-            .toUpperCase(Locale.ROOT);
+                ? simpleName.substring(0, simpleName.length() - "State".length())
+                : simpleName;
+        return rawName.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ROOT);
     }
 }
